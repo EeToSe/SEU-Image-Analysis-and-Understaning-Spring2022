@@ -1,6 +1,6 @@
 # Image analysis and understanding
 ## Ass1: Morphology Experiment
 ### Ass1-1: Binary operation
-1. ![\Small x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}](https://latex.codecogs.com/svg.latex?\Small&space;x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}) 
+1. ![x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}](https://latex.codecogs.com/svg.latex?\Small&space;x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}) 
 ### Ass1-2: Grayscale Morphology
 ## Computer Vision
