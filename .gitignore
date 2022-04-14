@@ -1,0 +1,6 @@
+
+image analysis/.idea/ImageAnalysis.iml
+*.xml
+*.png
+image analysis/src/__pycache__/helper_function.cpython-38.pyc
+image analysis/src/test.py
