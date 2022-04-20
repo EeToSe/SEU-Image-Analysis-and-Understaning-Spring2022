@@ -1,4 +1,3 @@
-from cv2 import threshold
 import numpy as np
 
 def otsu_criteria_compute(img, th):
@@ -17,12 +16,16 @@ def otsu_criteria_compute(img, th):
     img_th[img >= th] = 1;
 
     # compute the class probabilities
-    w0 = np.count_nonzero(img_th==0)
+    w0 = np.count_nonzero(img_th==0)/img.size
     w1 = 1 - w0
 
+    # if one class is empty
+    if w0 == 0 or w1 == 0:
+        return 0
+
     # compute the class means
-    mean1 = np.mean([img >= th])
-    mean2 = np.mean([img < th])
+    mean1 = np.mean(img[img >= th])
+    mean2 = np.mean(img[img < th])
 
     return w0*w1*((mean1-mean2)**2)
 
