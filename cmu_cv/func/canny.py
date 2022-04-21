@@ -105,7 +105,7 @@ def hysteresis(mag):
             if  0 < mag[i_y, i_x] < 255:
                 # check 8 neighbors contain "sure-edge" pixel 
                 neighbors = [mag[i][j] for i in range(i_x-1, i_x+2) for j in range(i_y-1, i_y+2)]
-                if neighbors.max() == 255:
+                if max(neighbors) == 255:
                     mag[i_y, i_x] = 255
                 else:
                     mag[i_y, i_x] =0
