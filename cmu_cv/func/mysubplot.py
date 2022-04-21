@@ -7,4 +7,5 @@ def mysubplot(imgs, titles, row, col):
         plt.subplot(row,col,i+1),plt.imshow(imgs[i],'gray')
         plt.title(titles[i])
         plt.xticks([]),plt.yticks([])
+    plt.tight_layout()
     plt.show()        

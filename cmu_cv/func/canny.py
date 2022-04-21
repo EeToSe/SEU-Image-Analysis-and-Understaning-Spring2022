@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+from scipy.ndimage.filters import convolve
+from scipy import ndimage
 
 def canny_detector(img, low_th = None, high_th = None):
     '''
@@ -12,18 +14,29 @@ def canny_detector(img, low_th = None, high_th = None):
     '''
     # Noise reduction step
     # img = cv2.GaussianBlur(img, (5, 5), 1.4)
-        
-    mag_thin = non_max_suppression(mag, ang) 
+    magnitude, angle = sobel_filter(img)
+    mag_thin = non_max_suppression(magnitude, angle)  
     mag_th = double_threshold(mag_thin, low_th, high_th)
+    res = hysteresis(mag_th)
+    return res
 
-def sobel_filter(img, k=3):
-    # Calculating the gradients
-    sobel_x = cv2.Sobel(img,-1,1,0,ksize=k)
-    sobel_y = cv2.Sobel(img,-1,0,1,ksize=k)
+def sobel_filter(img, k = 3):
+    '''
+        Strange opencv library cv2.Sobel dont work
+    '''
+    # return (magnitude, angle)
+    Kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], np.float32)
+    Ky = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], np.float32)
+    
+    sobel_x = ndimage.filters.convolve(img, Kx)
+    sobel_y = ndimage.filters.convolve(img, Ky)
 
-    # Conversion of Cartesian coordinates to polar 
-    mag, ang = cv2.cartToPolar(sobel_x, sobel_y, angleInDegrees = True)
-    return (255*mag/mag.max(), ang)
+    mag = np.hypot(sobel_x, sobel_y)
+    mag = mag / mag.max() * 255
+    theta = np.arctan2(sobel_y, sobel_x)
+    angle = theta * 180. / np.pi
+    angle[angle < 0] += 180
+    return (mag, angle)    
 
 def non_max_suppression(img, angle):
     '''
@@ -38,13 +51,14 @@ def non_max_suppression(img, angle):
 
         Output:
         - img_thin： Non-Maximum Suppression of gradient magnitude
-    '''    
+    ''' 
     M, N = img.shape
-    img_thin = img.copy()
+    img_thin = np.zeros(img.shape)
+
     for i in range(1,M-1):
         for j in range(1,N-1):
             # q and r stores the intensity of neighbour pixels
-            #angle 0
+            # angle 0
             if (0 <= angle[i,j] < 22.5) or (157.5 <= angle[i,j] <= 180):
                 q = img[i, j+1]
                 r = img[i, j-1]
@@ -62,40 +76,35 @@ def non_max_suppression(img, angle):
                 r = img[i+1, j+1]
 
             if (img[i,j] >= q) and (img[i,j] >= r):
-                continue
-            else:
-                img_thin[i,j] = 0
+                img_thin[i,j] = img[i,j]
     return img_thin
 
 def double_threshold(img, low_th, high_th):
     # setting the minimum and maximum thresholds 
     img_max = np.max(img)
-    if not low_th:low_th = img_max * 0.1
-    if not high_th:high_th = img_max * 0.5
-   
-    img_th = img.copy()
-    img_th[img_th >= high_th] = 255
-    img_th[(img_th < high_th) & (img_th > low_th)] = 75
-    img_th[img_th <= low_th] = 0
+    low_th = low_th*img_max
+    high_th = high_th*img_max
+
+    img_th = np.zeros(img.shape)
+    img_th[img >= high_th] = 255
+    img_th[(img < high_th) & (img > low_th)] = 75
     img_th = img_th.astype('uint8')
-    print('helloa')
     return img_th
 
 def hysteresis(img):
-    mag = img.copy()
-    height, width = mag.shape
-
+    height, width = img.shape
     # Looping through every pixel of the grayscale image
+    img_track = img.copy()
     for i_x in range(1, width-1):
         for i_y in range(1, height-1):
-            if  0 < mag[i_y, i_x] < 255:
+            if 0 < img[i_y, i_x] < 255:
                 # check 8 neighbors contain "sure-edge" pixel 
-                neighbors = [mag[i][j] for j in range(i_x-1, i_x+2) for i in range(i_y-1, i_y+2)]
+                neighbors = [img[i][j] for j in range(i_x-1, i_x+2) for i in range(i_y-1, i_y+2)]
                 if max(neighbors) == 255:
-                    continue
+                    img_track[i_y, i_x] = 255
                 else:
-                    mag[i_y, i_x] =0
-    return mag
+                    img_track[i_y, i_x] = 0
+    return img_track
 
 
 
