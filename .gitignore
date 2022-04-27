@@ -10,3 +10,6 @@ cmu_cv/.ipynb_checkpoints/Lecture_2-checkpoint.ipynb
 cmu_cv/.ipynb_checkpoints/Lecture_4-checkpoint.ipynb
 cmu_cv/filtering.md
 cmu_cv/.vscode/settings.json
+cs231n/*
+.cmuvenv/*
+.ipynb_checkpoints/Lecture_3-checkpoint.ipynb
