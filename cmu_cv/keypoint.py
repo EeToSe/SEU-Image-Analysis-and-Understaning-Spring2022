@@ -7,7 +7,6 @@ import cv2
 def createGaussianPyramid(im, sigma0=1, 
         k=np.sqrt(2), levels=[-1,0,1,2,3,4]):
     '''Produces a Gaussian pyramid
-
     Inputs:
         im - source image
         sigma0 - standard deviation of gaussian function
@@ -21,7 +20,9 @@ def createGaussianPyramid(im, sigma0=1,
     im_pyramid = []
     for i in levels:
         sigma_ = sigma0*k**i
-        im_pyramid.append(cv2.GaussianBlur(im, (0,0), sigma_))
+        # compute kernel with EXTENT = 3*sigma
+        size = int(np.floor(3*sigma_*2) + 1)
+        im_pyramid.append(cv2.GaussianBlur(im, (size,size), sigma_))
 
     # join a sequence of array along a new axis, result.size=(imH, imW, #levels) 
     im_pyramid = np.stack(im_pyramid, axis=-1)
@@ -51,7 +52,7 @@ def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
     DoG_pyramid = []
 
     for i in DoG_levels:
-        # compute DoG use gp_{l} - gp_{l-1}, gl aka gaussian pyramid
+        # compute DoG use gp_{l} - gp_{l-1}, gp aka gaussian pyramid
         DoG_pyramid.append(gaussian_pyramid[:, :, i+1] - gaussian_pyramid[:, :, i])
     DoG_pyramid = np.stack(DoG_pyramid, axis=-1)
     return DoG_pyramid, DoG_levels 
@@ -90,17 +91,16 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         th_contrast=0.03, th_r=12):
     '''
     Returns local extrema points in both scale and space using the DoGPyramid
-    INPUTS
-        DoG_pyramid - size (imH, imW, len(levels) - 1) matrix of the DoG pyramid
-        DoG_levels  - The levels of the pyramid where the blur at each level is
-                      outputs
+    Inputs:
+        DoG_pyramid - size (imH, imW, #levels-1) matrix of the DoG pyramid
+        DoG_levels  - levels[1:], which specifies corresponding levels of DoG Pyramid
         principal_curvature - size (imH, imW, len(levels) - 1) matrix contains the
-                      curvature ratio R
+                            curvature ratio R for correspoingding point in DoG_pyramid
         th_contrast - lower bound for local extremums 
         th_r        - upper bound for local extremums
-     OUTPUTS
+     Outputs:
         locsDoG - N x 3 matrix where the DoG pyramid achieves a local extrema in both
-               scale and space, and also satisfies the two thresholds.
+                  scale and space, and also satisfies the two thresholds.
     '''
     return locsDoG
     
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     
     # compute principal curvature
     pc_curvature = computePrincipalCurvature(DoG_pyr)
-    # # test get local extrema
+    # test get local extrema
     th_contrast = 0.03
     # th_r = 12
     # locsDoG = getLocalExtrema(DoG_pyr, DoG_levels, pc_curvature, th_contrast, th_r)
