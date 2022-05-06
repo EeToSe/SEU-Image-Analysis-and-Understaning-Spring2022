@@ -14,10 +14,10 @@ cs231n/*
 .cmuvenv/*
 .ipynb_checkpoints/Lecture_3-checkpoint.ipynb
 cmu_cv/nbs/L4_hough_transform.ipynb
-cmu_cv/reference/16720B-vision-master.zip
-cmu_cv/reference/16720B-master.zip
-cmu_cv/reference/385-ComputerVision-master.zip
 cmu_cv/nbs/L4_hough_transform.ipynb
 
 image analysis/src/ass1/binary.ipynb
 image analysis/src/ass1/gray.ipynb
+cmu_cv/panorama/reference/*.zip
+
+cmu_cv/keypointDetect.ipynb
