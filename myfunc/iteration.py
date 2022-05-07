@@ -2,20 +2,12 @@ import numpy as np
 import cv2 as cv
 from cv2 import BORDER_REFLECT
 
-def read_txt(file):
-# Read txt file into the numpy array
-    array = np.genfromtxt(file, dtype=int,\
-                          encoding=None, delimiter=",")
-    binary_array = np.where(array>0, 255, 0)
-    binary_array = np.asarray(binary_array, dtype="uint8" )
-    return binary_array
-
 def iteration(I_start,se1,Is):
     I_finish = cv.bitwise_and(cv.dilate(I_start, se1, iterations=1), Is)
     if np.array_equal(I_start, I_finish):
         return I_finish
     else:
-        return iteration(I_finish,se1,Is)
+        return iteration(I_finish, se1, Is)
 
 def convex_iteration(I_start,B1,B2):
     e1 = cv.erode(I_start,B1,iterations=1,borderType = BORDER_REFLECT)
@@ -24,7 +16,7 @@ def convex_iteration(I_start,B1,B2):
     if np.array_equal(I_start, I_finish):
         return I_finish
     else:
-        return convex_iteration(I_finish,B1,B2)
+        return convex_iteration(I_finish, B1, B2)
 
 def mr_iteration(I_start, B, I0):
     I_finish = cv.min((cv.dilate(I_start, B)), I0)
