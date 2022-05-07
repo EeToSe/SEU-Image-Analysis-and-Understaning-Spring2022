@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-def mysubplot(imgs, titles, row, col):
+def subplots(imgs, titles, row, col):
     '''
         Subplots a set of images in grayscale
     '''
@@ -8,4 +8,5 @@ def mysubplot(imgs, titles, row, col):
         plt.title(titles[i])
         plt.xticks([]),plt.yticks([])
     plt.tight_layout()
-    plt.show()        
+    plt.show()
+    print('Hmm, nice plots!')     
