@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from scipy.ndimage import maximum_filter, minimum_filter
 
 def createGaussianPyramid(im, sigma0=1, 
         k=np.sqrt(2), levels=[-1,0,1,2,3,4]):
@@ -94,35 +95,36 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         locsDoG - N x 3 matrix where the DoG pyramid achieves a local extrema in both
                scale and space, and also satisfies the two thresholds.
     '''
-    locsDoG = []
-    # Compute locsDoG here
-    imH, imW, l = DoG_pyramid.shape
-    for i in range(0, l):
-        # find neighbors
-        neighbors = [DoG_pyramid[:imH-2, :imW-2, i], DoG_pyramid[:imH-2, 1:imW-1, i],
-                     DoG_pyramid[:imH-2, 2:, i], DoG_pyramid[1:imH-1, :imW-2, i],
-                     DoG_pyramid[1:imH-1, 2:, i], DoG_pyramid[2:, :imW-2, i],
-                     DoG_pyramid[2:, 1:imW-1, i], DoG_pyramid[2:, 2:, i]]
-        if i > 0:
-            neighbors.append(DoG_pyramid[1:imH-1, 1:imW-1, i-1])
-        if i < l-1:
-            neighbors.append(DoG_pyramid[1:imH-1, 1:imW-1, i+1])
-        neighbors = np.array(neighbors)
-        layer_data = DoG_pyramid[1:imH-1, 1:imW-1, i]
-        # find local extrema
-        is_extrema = (layer_data > np.max(neighbors, axis=0)) | (layer_data < np.min(neighbors, axis=0))
-        # apply threshold to exclude unqualified points
-        is_extrema &= (np.absolute(layer_data) > th_contrast)
-        is_extrema &= (np.absolute(principal_curvature[1:imH-1, 1:imW-1, i]) < th_r)
-        spatial_loc = np.where(is_extrema == True)
+    imH, imW, levels = DoG_pyramid.shape
+    res = []
+    for l in range(levels):
+        # region of interest
+        region = DoG_pyramid[1:imH-1, 1:imW-1, l]
+        # calculate local extremas in space
+        space_max = maximum_filter(region, size=3)
+        space_min = minimum_filter(region, size=3)
+        # calculate local extremas in scale
+        scale = []
+        if l > DoG_levels[0]:
+            scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l-1])
+        if l < DoG_levels[-1]:
+            scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l+1])
+        scale = np.asarray(scale)
+        scale_max = np.max(scale, axis=0)
+        scale_min = np.min(scale, axis=0)
+        # find local extremas in both scale and space
+        is_extrema = (region >= np.maximum(space_max, scale_max)) | \
+                    (region <= np.minimum(space_min, scale_min))
+        is_extrema &= (np.abs(region) > th_contrast) # remove small DoG response
+        is_extrema &= (np.abs(principal_curvature[1:imH-1, 1:imW-1, l]) < th_r) # remove large PCR
 
-        y, x = spatial_loc[0]+1, spatial_loc[1]+1
-        for ind in range(len(y)):
-            locsDoG.append([x[ind], y[ind], DoG_levels[i]])
+        coordinates = (np.asarray(np.where(is_extrema == True))+1).T  # +1 back to original frame
+        # swap columns such that (x, y)
+        coordinates[:, [1,0]] = coordinates[:, [0,1]]
+        level = l*np.ones((coordinates.shape[0],1),dtype=np.uint8)
+        res.append(np.hstack((coordinates, level)))
 
-    locsDoG = np.array(locsDoG)
-
-    return locsDoG
+    return np.concatenate(res)
     
 
 def DoGdetector(im, sigma0=1, k=np.sqrt(2), levels=[-1,0,1,2,3,4], 
