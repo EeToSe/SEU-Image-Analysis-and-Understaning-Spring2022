@@ -21,3 +21,4 @@ image analysis/src/ass1/gray.ipynb
 cmu_cv/panorama/reference/*.zip
 
 cmu_cv/keypointDetect.ipynb
+image_analysis/.idea/ImageAnalysis.iml

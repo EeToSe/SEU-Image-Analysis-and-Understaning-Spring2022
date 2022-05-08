@@ -1,10 +1,38 @@
 import numpy as np
 
+def calculate_membership(frame, x, t):
+    """
+    Inputs:
+        - frame: the img numpy array with uint8 data type
+        - t: given threshold
+        - x: a pixel value
+    Outputs:
+        - degree of membership
+    """
+    C = 256
+    # calculate means of class intensity
+    class0 = frame[frame < t]
+    if (class0.size == 0):
+        # deal with empty slice
+        mean0 = 0
+    else:
+        mean0 = np.mean(frame[frame < t])
+    class1 = frame[frame >= t]
+    if (class1.size == 0):
+        # deal with empty slice
+        mean1 = 0
+    else:
+        mean1 = np.mean(frame[frame >= t])    
+    if x < t:
+        return 1/(1+np.abs(x-mean0)/C)
+    else:
+        return 1/(1+np.abs(x-mean1)/C)
+
 def fuzzy_threshold(frame):
     """Fuzzy thresholding implementation.
     
     Inputs:
-        - img: the img numpy array with uint8 data type
+        - frame: the img numpy array with uint8 data type
     Outputs:
         - entropy for t in [0 255]
         - a threshold 
@@ -45,3 +73,5 @@ def fuzzy_threshold(frame):
 
     fuzzy_t = range_th[np.argmin(S_t)]
     return S_t, fuzzy_t
+
+ 
