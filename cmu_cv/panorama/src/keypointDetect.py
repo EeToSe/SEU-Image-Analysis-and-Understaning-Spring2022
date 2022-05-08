@@ -116,8 +116,8 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         if l < DoG_levels[-1]:
             scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l+1])
         scale = np.asarray(scale)
-        scale_max = np.max(scale, axis=0)
-        scale_min = np.min(scale, axis=0)
+        scale_max = maximum_filter(np.max(scale, axis=0), size=3)
+        scale_min = minimum_filter(np.min(scale, axis=0), size=3)
         # find local extremas in both scale and space
         is_extrema = (region >= np.maximum(space_max, scale_max)) | \
                     (region <= np.minimum(space_min, scale_min))
@@ -164,7 +164,7 @@ def DoGdetector(im, sigma0=1, k=np.sqrt(2), levels=[-1,0,1,2,3,4],
 if __name__ == '__main__':
     # test gaussian pyramid
     levels = [-1,0,1,2,3,4]
-    im = cv2.imread('data/model_chickenbroth.jpg')
+    im = cv2.imread('../data/model_chickenbroth.jpg')
     
     # test gaussian pyramid
     im_pyr = createGaussianPyramid(im)
@@ -186,4 +186,4 @@ if __name__ == '__main__':
     tmp_im = cv2.resize(im, (2*im.shape[1], 2*im.shape[0]))
     for point in keypoints:
         cv2.circle(tmp_im, (2*point[0], 2*point[1]), 2, (0, 255, 0), -1)
-    cv2.imwrite('results/keypoints.png', tmp_im)
+    cv2.imwrite('../results/keypoints.png', tmp_im)
