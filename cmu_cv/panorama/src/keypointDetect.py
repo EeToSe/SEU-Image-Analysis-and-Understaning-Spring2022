@@ -33,7 +33,6 @@ def displayPyramid(im_pyramid):
     cv2.imshow('Pyramid of image', im_pyramid)
     cv2.waitKey(0) # press any key to exit
     cv2.destroyAllWindows()
-    return im_pyramid
 
 def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
     '''Produces DoG Pyramid
@@ -47,7 +46,7 @@ def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
                    created by differencing the Gaussian Pyramid input
     DoG levels - levels[1:], which specifies corresponding levels of DoG Pyramid
     '''
-    DoG_levels = levels[1:]
+    DoG_levels = range(len(levels)-1)
     DoG_pyramid = []
 
     for i in range(len(levels)-1):
@@ -103,7 +102,7 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
     '''
     imH, imW, levels = DoG_pyramid.shape
     res = []
-    for l in range(levels):
+    for l in range(1,levels-1):
         # region of interest
         region = DoG_pyramid[1:imH-1, 1:imW-1, l]
         # calculate local extremas in space
@@ -111,10 +110,8 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         space_min = minimum_filter(region, size=3)
         # calculate local extremas in scale
         scale = []
-        if l > 0:
-            scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l-1])
-        if l < levels-1:
-            scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l+1])
+        scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l-1])
+        scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l+1])
         scale = np.asarray(scale)
         scale_max = maximum_filter(np.max(scale, axis=0), size=3)
         scale_min = minimum_filter(np.min(scale, axis=0), size=3)
@@ -122,7 +119,7 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         is_extrema = (region >= np.maximum(space_max, scale_max)) | \
                     (region <= np.minimum(space_min, scale_min))
         is_extrema &= (np.abs(region) >= th_contrast) # remove small DoG response
-        is_extrema &= (np.abs(principal_curvature[1:imH-1, 1:imW-1, l]) <= th_r) # remove large PCR
+        # is_extrema &= (np.abs(principal_curvature[1:imH-1, 1:imW-1, l]) <= th_r) # remove large PCR
 
         coordinates = (np.asarray(np.where(is_extrema == True))+1).T  # +1 back to original frame
         # swap columns such that (x, y)
