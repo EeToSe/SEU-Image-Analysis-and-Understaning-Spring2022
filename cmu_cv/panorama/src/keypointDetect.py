@@ -50,8 +50,8 @@ def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
     DoG_levels = levels[1:]
     DoG_pyramid = []
 
-    for i in DoG_levels:
-        # compute DoG use gp_{l} - gp_{l-1}, gp aka gaussian pyramid
+    for i in range(len(levels)-1):
+        # compute DoG use gp_{l+1} - gp_{l}, gp aka gaussian pyramid
         DoG_pyramid.append(gaussian_pyramid[:, :, i+1] - gaussian_pyramid[:, :, i])
     DoG_pyramid = np.stack(DoG_pyramid, axis=-1)
     return DoG_pyramid, DoG_levels 
@@ -111,9 +111,9 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         space_min = minimum_filter(region, size=3)
         # calculate local extremas in scale
         scale = []
-        if l > DoG_levels[0]:
+        if l > 0:
             scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l-1])
-        if l < DoG_levels[-1]:
+        if l < levels-1:
             scale.append(DoG_pyramid[1:imH-1, 1:imW-1, l+1])
         scale = np.asarray(scale)
         scale_max = maximum_filter(np.max(scale, axis=0), size=3)
@@ -129,7 +129,6 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         coordinates[:, [1,0]] = coordinates[:, [0,1]]
         level = l*np.ones((coordinates.shape[0],1),dtype=np.uint8)
         res.append(np.hstack((coordinates, level)))
-
     return np.concatenate(res)
     
 
@@ -166,22 +165,19 @@ if __name__ == '__main__':
     levels = [-1,0,1,2,3,4]
     im = cv2.imread('../data/model_chickenbroth.jpg')
     
-    # test gaussian pyramid
-    im_pyr = createGaussianPyramid(im)
-    displayPyramid(im_pyr)
+    # # test gaussian pyramid
+    # im_pyr = createGaussianPyramid(im)
+    # displayPyramid(im_pyr)
     
-    # test DoG pyramid
-    DoG_pyr, DoG_levels = createDoGPyramid(im_pyr, levels)
-    displayPyramid(DoG_pyr)
+    # # test DoG pyramid
+    # DoG_pyr, DoG_levels = createDoGPyramid(im_pyr, levels)
+    # displayPyramid(DoG_pyr)
     
-    # compute principal curvature
-    pc_curvature = computePrincipalCurvature(DoG_pyr)
-    # test get local extrema
-    th_contrast = 0.03
-    th_r = 12
+    # # compute principal curvature
+    # pc_curvature = computePrincipalCurvature(DoG_pyr)
 
     # test DoG detector
-    keypoints, gaussian_pyramid = DoGdetector(im)
+    keypoints, gaussian_pyramid = DoGdetector(im, levels=levels)
 
     tmp_im = cv2.resize(im, (2*im.shape[1], 2*im.shape[0]))
     for point in keypoints:
