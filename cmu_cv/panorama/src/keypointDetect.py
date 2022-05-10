@@ -5,11 +5,15 @@ from scipy.ndimage import maximum_filter, minimum_filter
 def createGaussianPyramid(im, sigma0=1, 
         k=np.sqrt(2), levels=[-1,0,1,2,3,4]):
     '''Produces a Gaussian pyramid
-    Inputs:
-        im - source image
-        sigma0 - standard deviation of gaussian function
-        k - related to sigma_
-        levels - level list of the pyramid 
+    Inputs          Description
+    --------------------------------------------------------------------------
+    im              source image
+    sigma0          standard deviation of gaussian function
+    k               related to sigma_
+    levels          level list of the pyramid
+    Output          Description
+    --------------------------------------------------------------------------
+    im_pyramid      Gaussian pyramid of size = (imH, imW, #levels)
     '''
     if len(im.shape)==3:
         im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -36,15 +40,15 @@ def displayPyramid(im_pyramid):
 
 def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
     '''Produces DoG Pyramid
-    Inputs:
-    Gaussian Pyramid - A matrix of grayscale images of size
-                        (imH, imW, #levels)
-    levels      - the levels of the pyramid where the blur at each level is
+    Inputs                  Description
+    --------------------------------------------------------------------------
+    gaussian_pyramid        Gaussian pyramid of size = (imH, imW, #levels)
+    levels                  the level number of the pyramid
 
-    Outputs:
-    DoG Pyramid - size (imH, imW, #levels-1) matrix of the DoG pyramid
-                   created by differencing the Gaussian Pyramid input
-    DoG levels - levels[1:], which specifies corresponding levels of DoG Pyramid
+    Outputs                 Description
+    --------------------------------------------------------------------------
+    DoG Pyramid             DoG pyramid of size = (imH, imW, #levels-1) 
+    DoG levels              levels[1:], which specifies corresponding levels of DoG Pyramid
     '''
     DoG_levels = range(len(levels)-1)
     DoG_pyramid = []
@@ -57,13 +61,14 @@ def createDoGPyramid(gaussian_pyramid, levels=[-1,0,1,2,3,4]):
 
 def computePrincipalCurvature(DoG_pyramid):
     ''' Computes principal curvature ratio R from DoG_pyramid
-    Inputs:
-        DoG Pyramid - size (imH, imW, #levels-1) matrix of the DoG pyramid
+    Inputs                  Description
+    --------------------------------------------------------------------------
+    DoG_pyramid             DoG pyramid of size = (imH, imW, #levels-1) 
     
-    Outputs:
-        principal_curvature - size (imH, imW, #levels-1) matrix where each 
-                          point contains the curvature ratio R for the 
-                          corresponding point in the DoG pyramid.
+    Outputs                 Description
+    --------------------------------------------------------------------------
+    principal_curvature -   Principle curvature ratio R size = (imH, imW, #levels-1) 
+                            calculated from the corresponding DoG pyramid.
     '''
     principal_curvature = np.zeros(DoG_pyramid.shape)
 
@@ -89,16 +94,19 @@ def getLocalExtrema(DoG_pyramid, DoG_levels, principal_curvature,
         th_contrast=0.03, th_r=12):
     '''
     Returns local extrema points in both scale and space using the DoGPyramid
-    Inputs:
-        DoG_pyramid - size (imH, imW, #levels-1) matrix of the DoG pyramid
-        DoG_levels  - levels[1:], which specifies corresponding levels of DoG Pyramid
-        principal_curvature - size (imH, imW, len(levels) - 1) matrix contains the
-                            curvature ratio R for corresponding point in DoG_pyramid
-        th_contrast - lower bound for local extrema of principal_curvature
-        th_r        - upper bound for local extrema of principal_curvature
-     Outputs:
-        locsDoG - N x 3 matrix where the DoG pyramid achieves a local extrema in both
-                  scale and space, and also satisfies the two thresholds.
+    Inputs                  Description
+    --------------------------------------------------------------------------
+    DoG_pyramid             DoG pyramid of size = (imH, imW, #levels-1) 
+    DoG levels              levels[1:], which specifies corresponding levels of DoG Pyramid
+    principal_curvature     Principle curvature ratio R size = (imH, imW, #levels-1) 
+                            calculated from the corresponding DoG pyramid.
+    th_contrast             lower bound for local extrema of principal_curvature
+    th_r                    upper bound for local extrema of principal_curvature
+    
+    Outputs                 Description
+    --------------------------------------------------------------------------
+    locsDoG                 N x 3 matrix where the DoG pyramid achieves a local extrema in both
+                            scale and space, and also satisfies the two thresholds.
     '''
     imH, imW, levels = DoG_pyramid.shape
     res = []
@@ -141,6 +149,7 @@ def DoGdetector(im, sigma0=1, k=np.sqrt(2), levels=[-1,0,1,2,3,4],
     levels          Levels of pyramid to construct. Suggest -1:4.
     th_contrast     DoG contrast threshold.  Suggest 0.03.
     th_r            Principal Ratio threshold.  Suggest 12.
+    
     Outputs         Description
     --------------------------------------------------------------------------
     locsDoG         N x 3 matrix where the DoG pyramid achieves a local extrema
