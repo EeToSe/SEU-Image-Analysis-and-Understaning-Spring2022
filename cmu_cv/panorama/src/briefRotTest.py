@@ -5,11 +5,12 @@ import BRIEF
 import matplotlib.pyplot as plt
 
 def rotation_matrix(im, deg):
-    ''' calculate the rotation matrix M
+    ''' Calculate the rotation matrix M
     Input           Description
     ---------------------------------------------------------
     im              source image to rotate
     deg             degrees to rotate
+    
     Output          Description
     ---------------------------------------------------------
     M               rotation matrix size = [2,3]
@@ -34,12 +35,13 @@ def rotation_matrix(im, deg):
     return np.mat(M), rotated_image
 
 def recognition_rate(im, rotated_image, M):
-    ''' calculate the rrecognition rate
-    Input           Description
+    ''' Calculate the recognition rate for BRIEF descriptor
+    Inputs          Description
     ---------------------------------------------------------
     im              source image to rotate
     rotated_image   im rotated by deg  
     deg             degrees to rotate
+
     Output          Description
     ---------------------------------------------------------
     M               rotation matrix size = [2,3]
@@ -65,13 +67,14 @@ def recognition_rate(im, rotated_image, M):
     return correctNum/ matchesNum
 
 def rotate_match(im):
-    """ Compare the therotical locs coordianates with the results by briefMatch 
-     Input           Description
+    """Compare the therotical locs coordianates with the results by briefMatch 
+    Input                   Description
     ---------------------------------------------------------
-    im       numpy array representing the image with size (H, W, 3)
-    Returns:
-      match_count: Be in type of list.
-                   Each item is a tuple (count of correct matches, degree)
+    im                      numpy array representing the image with size=(H, W, 3)
+    
+    Output                  Description
+    ---------------------------------------------------------
+    recognition_results     numpy array with recognition result for 
     """
     recognition_results = []
     for deg in range(0, 30, 2):
@@ -85,7 +88,7 @@ def rotate_match(im):
     return np.array(recognition_results)
 
 def construct_graph(recognition_results):
-    """ paper Section4 - Result recurrence for BRIEF rotation
+    """Recurrence of paper Section4 - Orientation Sensitivity of BRIEF
     """
     x = recognition_results[:,0]
     y = 100*recognition_results[:,1]
