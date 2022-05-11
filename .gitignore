@@ -1,21 +1,22 @@
 *.xml
 image analysis/src/__pycache__/helper_function.cpython-38.pyc
 image analysis/src/test.py
+image_analysis/.idea/ImageAnalysis.iml
+image_analysis/src/ass1/binary.ipynb
+image_analysis/src/ass1/gray.ipynb
+
 *.pyc
+
 cmu_cv/cspell.json
 cmu_cv/.ipynb_checkpoints/Lecture_2-checkpoint.ipynb
+cmu_cv/.ipynb_checkpoints/Lecture_3-checkpoint.ipynb
 cmu_cv/.ipynb_checkpoints/Lecture_4-checkpoint.ipynb
 cmu_cv/filtering.md
 cmu_cv/.vscode/settings.json
-cs231n/*
-.cmuvenv/*
-.ipynb_checkpoints/Lecture_3-checkpoint.ipynb
-
+cmu_cv/.cmuvenv/*
 cmu_cv/panorama/reference/*.zip
-
-image_analysis/.idea/ImageAnalysis.iml
-image_analysis/src/ass1/binary.ipynb
-.gitignore
-image_analysis/src/ass1/gray.ipynb
 cmu_cv/notebooks/generated_files/*
 cmu_cv/panorama/results/*
+
+cs231n/*
+
