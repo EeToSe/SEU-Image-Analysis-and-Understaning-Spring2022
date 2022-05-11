@@ -1,232 +1,102 @@
 import numpy as np
 import cv2
-import os
-from scipy.spatial.distance import cdist
-from keypointDetect import DoGdetector
+import BRIEF
 
 import matplotlib.pyplot as plt
 
-
-def makeTestPattern(patch_width=9, nbits=256):
+def rotation_matrix(im, deg):
+    ''' calculate the rotation matrix M
+    Input           Description
+    ---------------------------------------------------------
+    im              source image to rotate
+    deg             degrees to rotate
+    Output          Description
+    ---------------------------------------------------------
+    M               rotation matrix size = [2,3]
+    rotated_image   im rotated by deg    
     '''
-    Creates Test Pattern for BRIEF
+    imh, imw = im.shape[:2]
+    center = (imw//2, imh//2)
+    
+    M = cv2.getRotationMatrix2D(center=center, angle=deg, scale=1)
+    # apply affine functions to the image size as well
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
 
-    Run this routine for the given parameters patch_width = 9 and n = 256
+    # compute the new bounding dimensions of the image
+    nW = int((imh * sin) + (imw * cos))
+    nH = int((imh * cos) + (imw * sin))
 
-    INPUTS
-    patch_width - the width of the image patch (usually 9)
-    nbits      - the number of tests n in the BRIEF descriptor
+    # adjust the rotation matrix to take into account translation
+    M[0, 2] += (nW / 2) - center[0]
+    M[1, 2] += (nH / 2) - center[1]    
+    rotated_image = cv2.warpAffine(im, M, (nW, nH))
+    return np.mat(M), rotated_image
 
-    OUTPUTS
-    compareX and compareY - LINEAR indices into the patch_width x patch_width image
-                            patch and are each (nbits,) vectors.
+def recognition_rate(im, rotated_image, M):
+    ''' calculate the rrecognition rate
+    Input           Description
+    ---------------------------------------------------------
+    im              source image to rotate
+    rotated_image   im rotated by deg  
+    deg             degrees to rotate
+    Output          Description
+    ---------------------------------------------------------
+    M               rotation matrix size = [2,3]
+    rotated_image   im rotated by deg    
     '''
-    #############################
-    # TO DO ...
-    # Generate testpattern here
+    locs1, desc1 = BRIEF.briefLite(im)
+    locs2, desc2 = BRIEF.briefLite(rotated_image)
+    matches = BRIEF.briefMatch(desc1, desc2)
+    pt1 = locs1[matches[:,0], 0:2]
+    pt2 = locs2[matches[:,1], 0:2]
 
-    # To use Gaussian random sampling
-    #compareX = np.random.normal(patch_width//2, patch_width**2/25, nbits)
-    #compareY = np.random.normal(patch_width//2, patch_width**2/25, nbits)
-    #
-    compareX = np.random.random_integers(0, patch_width**2 - 1, nbits)
-    compareY = np.random.random_integers(0, patch_width**2 - 1, nbits)
-    #np.save('../results/testPattern.npy', [compareX, compareY])
-    return  compareX, compareY
+    # augment pt1 to size = (3, N)
+    pt1_augment = np.c_[pt1, np.ones(pt1.shape[0])].T   
+    pt1_rotate = np.array(M*np.mat(pt1_augment)).T
 
-# load test pattern for Brief
-test_pattern_file = '../results/testPattern.npy'
+    # standard for the correct matches
+    error = pt1_rotate - pt2
+    matchesNum = matches.shape[0]
+    result = np.ones(matchesNum, dtype=bool)
+    result[np.abs(error[:,0])>4] = False
+    result[np.abs(error[:,1])>4] = False
+    correctNum = np.count_nonzero(result)
+    return correctNum/ matchesNum
 
-if os.path.isfile(test_pattern_file):
-    # load from file if exists
-    compareX, compareY = np.load(test_pattern_file)
-else:
-    # produce and save patterns if not exist
-    compareX, compareY = makeTestPattern()
-    if not os.path.isdir('../results'):
-        os.mkdir('../results')
-    np.save(test_pattern_file, [compareX, compareY])
+def rotate_match(im):
+    """ Compare the therotical locs coordianates with the results by briefMatch 
+     Input           Description
+    ---------------------------------------------------------
+    im       numpy array representing the image with size (H, W, 3)
+    Returns:
+      match_count: Be in type of list.
+                   Each item is a tuple (count of correct matches, degree)
+    """
+    recognition_results = []
+    for deg in range(0, 30, 2):
+        M, rotated_image = rotation_matrix(im, deg)
+        result = recognition_rate(im, rotated_image, M)
+        recognition_results.append((deg, result))
+    for deg in range(30, 180, 5):
+        M, rotated_image = rotation_matrix(im, deg)
+        result = recognition_rate(im, rotated_image, M)
+        recognition_results.append((deg, result))        
+    return np.array(recognition_results)
 
-
-def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
-    '''
-    Compute Brief feature
-     INPUT
-     locsDoG - locsDoG are the keypoint locations returned by the DoG
-               detector.
-     levels  - Gaussian scale levels that were given in Section1.
-     compareX and compareY - linear indices into the
-                             (patch_width x patch_width) image patch and are
-                             each (nbits,) vectors.
-
-
-     OUTPUT
-     locs - an m x 3 vector, where the first two columns are the image
-    		 coordinates of keypoints and the third column is the pyramid
-            level of the keypoints.
-     desc - an m x n bits matrix of stacked BRIEF descriptors. m is the number
-            of valid descriptors in the image and will vary.
-    '''
-    ##############################
-    # TO DO ...
-    # compute locs, desc here
-
-    #keypointDetect.
-    patch_width = 9
-    n = compareX.shape[0]
-    #print(compareX)
-    #print(compareY)
-    #l, g = DoGdetector(im)
-    #locs = locsDoG
-    locs = []
-    for i in range(locsDoG.shape[0]):
-        keypoint = locsDoG[i, :]
-        x = keypoint[1]
-        y = keypoint[0]
-        if (x - patch_width//2 >= 0) and (y - patch_width//2 >= 0) and (x + patch_width//2 < im.shape[0]) and (y + patch_width//2 < im.shape[1]):
-            locs.append(locsDoG[i,:])
-    locs = np.array(locs)
-
-    desc = np.empty((0, n))
-    for index in range(locsDoG.shape[0]):
-        keypoint = locsDoG[index, :]
-
-        x = keypoint[1]
-        y = keypoint[0]
-        level = keypoint[2]
-
-        if (x - patch_width//2 >= 0) and (y - patch_width//2 >= 0) and (x + patch_width//2 < im.shape[0]) and (y + patch_width//2 < im.shape[1]):
-
-            patch = np.empty((patch_width, patch_width))
-            for i in range(patch_width):
-                patch[i, :] = im[x-patch_width//2+i, y-patch_width//2:y+patch_width//2+1]
-            patch.resize(patch_width**2)
-
-
-            descriptor = np.zeros((1,n))
-            for i in range(n):
-                descriptor[0, i] = 1 if patch[compareX[i]] < patch[compareY[i]] else 0
-            desc = np.append(desc, descriptor, axis=0)
-        else:
-            #print(index)
-            #locs = np.delete(locs, index, 0)
-            pass
-    #print(desc.shape)
-    return locs, desc
-
-
-
-def briefLite(im):
-    '''
-    INPUTS
-    im - gray image with values between 0 and 1
-
-    OUTPUTS
-    locs - an m x 3 vector, where the first two columns are the image coordinates
-            of keypoints and the third column is the pyramid level of the keypoints
-    desc - an m x n bits matrix of stacked BRIEF descriptors.
-            m is the number of valid descriptors in the image and will vary
-            n is the number of bits for the BRIEF descriptor
-    '''
-    ###################
-    # TO DO ...
-    locsDoG, gaussian_pyramid = DoGdetector(im)
-    if len(im.shape)==3:
-        im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    if im.max()>10:
-        im = np.float32(im)/255
-    # for i in range(locsDoG.shape[0]):
-    #     cv2.circle(im, (locsDoG[i,0], locsDoG[i,1]), 1, color=(0,255,0), lineType=cv2.LINE_AA)
-    # cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-    # cv2.imshow('image', im)
-    locs, desc = computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY)
-
-    return locs, desc
-
-def briefMatch(desc1, desc2, ratio=0.8):
-    '''
-    performs the descriptor matching
-    inputs  : desc1 , desc2 - m1 x n and m2 x n matrix. m1 and m2 are the number of keypoints in image 1 and 2.
-                                n is the number of bits in the brief
-    outputs : matches - p x 2 matrix. where the first column are indices
-                                        into desc1 and the second column are indices into desc2
-    '''
-    D = cdist(np.float32(desc1), np.float32(desc2), metric='hamming')
-    # find smallest distance
-    ix2 = np.argmin(D, axis=1)
-    d1 = D.min(1)
-    # find second smallest distance
-    d12 = np.partition(D, 2, axis=1)[:,0:2]
-    d2 = d12.max(1)
-    r = d1/(d2+1e-10)
-    is_discr = r<ratio
-    ix2 = ix2[is_discr]
-    ix1 = np.arange(D.shape[0])[is_discr]
-
-    matches = np.stack((ix1,ix2), axis=-1)
-    return matches
-
-def plotMatches(im1, im2, matches, locs1, locs2):
-    fig = plt.figure()
-    # draw two images side by side
-    imH = max(im1.shape[0], im2.shape[0])
-    im = np.zeros((imH, im1.shape[1]+im2.shape[1]), dtype='uint8')
-    im[0:im1.shape[0], 0:im1.shape[1]] = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    im[0:im2.shape[0], im1.shape[1]:] = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
-    plt.imshow(im, cmap='gray')
-    for i in range(matches.shape[0]):
-        pt1 = locs1[matches[i,0], 0:2]
-        pt2 = locs2[matches[i,1], 0:2].copy()
-        pt2[0] += im1.shape[1]
-        x = np.asarray([pt1[0], pt2[0]])
-        y = np.asarray([pt1[1], pt2[1]])
-        plt.plot(x,y,'r')
-        plt.plot(x,y,'g.')
+def construct_graph(recognition_results):
+    """ paper Section4 - Result recurrence for BRIEF rotation
+    """
+    x = recognition_results[:,0]
+    y = 100*recognition_results[:,1]
+    plt.xlabel('Rotation angle [deg]')
+    plt.ylabel('recognition rate [%]')
+    plt.plot(x, y,'--bo', label='BRIEF')
+    plt.legend()
     plt.show()
-
-def rotateImage(im, angle):
-    R = cv2.getRotationMatrix2D((im.shape[1]//2, im.shape[0]//2), angle, 1.0)
-    return cv2.warpAffine(im, R, dsize=(im.shape[1], im.shape[0]))
 
 
 if __name__ == '__main__':
-    # test makeTestPattern
-    #compareX, compareY = makeTestPattern()
-    # test briefLite
-    #im = cv2.imread('../data/model_chickenbroth.jpg')
-    #locs, desc = briefLite(im)
-    #fig = plt.figure()
-    # plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), cmap='gray')
-    # plt.plot(locs[:,0], locs[:,1], 'r.')
-    # plt.draw()
-    # plt.waitforbuttonpress(0)
-    # plt.close(fig)
-    # test matches
-    im1 = cv2.imread('../data/model_chickenbroth.jpg')
-
-    im2 = cv2.imread('../data/model_chickenbroth.jpg')
-    locs1, desc1 = briefLite(im1)
-
-    angle = np.linspace(0, 180, 19).astype(int)
-    angle_str = []
-    num_matches = []
-    y_pos = np.arange(angle.shape[0])
-    for i in range(angle.shape[0]):
-        theta = angle[i]
-        im_rotated = rotateImage(im2, theta)
-        angle_str.append(str(theta))
-        #plt.imshow(im_rotated, cmap='gray')
-        #plt.show()
-        locs2, desc2 = briefLite(im_rotated)
-
-        matches = briefMatch(desc1, desc2)
-        num_matches.append(matches.shape[0])
-        #plotMatches(im1,im_rotated,matches,locs1,locs2)
-
-    plt.bar(y_pos, num_matches, align='center', alpha=0.5)
-    plt.xticks(y_pos, angle_str)
-    plt.xlabel('Rotation angle (degree)')
-    plt.ylabel('Number of matches')
-    plt.title('BRIEF Rotation Test')
-
-    plt.show()
+    img = cv2.imread('../data/model_chickenbroth.jpg')
+    recognition_results = rotate_match(img)
+    construct_graph(recognition_results)
