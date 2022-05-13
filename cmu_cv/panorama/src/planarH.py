@@ -1,125 +1,87 @@
+from random import random
 import numpy as np
 import cv2
 from BRIEF import briefLite, briefMatch, plotMatches
+import random
 
-def computeH(p1, p2):
+def computeH(pairs_d, pairs_s, pairsNum):
     '''
-    INPUTS:
-        p1 and p2 - Each are size (2 x N) matrices of corresponding (x, y)'
-                 coordinates between two images
-    OUTPUTS:
-     H2to1 - a 3 x 3 matrix encoding the homography that best matches the linear
-            equation
+    Inputs          Description
+    ---------------------------------------------------------
+    pairs_d         coordinates of pairs from destination 
+    pairs_s         and source images
+    pairsNum        # of pairs required for the linear equation
+
+    Outputs         Description
+    ---------------------------------------------------------
+    H_stod           a 3 x 3 matrix encoding the homography that 
+                    best matches the linear equation Xd = H*Xs
     '''
-    assert(p1.shape[1]==p2.shape[1])
-    assert(p1.shape[0]==2)
-    #############################
-    # TO DO ...
-    n = p1.shape[1]
-    A = np.zeros((2*n, 9))
+    
+    A = []
+    for i in range(pairsNum):
+        xd, yd = pairs_d[i,0], pairs_d[i,1]
+        xs, ys = pairs_s[i,0], pairs_s[i,1]
+        A.append([xs, ys, 1, 0, 0, 0, -xd*xs, -xd*ys, -xd])
+        A.append([0, 0, 0, xs, ys, 1, -yd*xs, -yd*ys, -yd])
+    
+    u, s, vh = np.linalg.svd(np.array(A))
+    H_stod = vh[-1, :].reshape((3,3))
+    return H_stod
 
-    for i in range(n):
-        x = p1[0, i]
-        y = p1[1, i]
-        u = p2[0, i]
-        v = p2[1, i]
+def ransacH(matches, locs1, locs2, pairsNum=4, num_iter=500, tol=4):
+    '''Returns the best homography by randomly iterationg the matches with RANSAC
+    Inputs              Description
+    ---------------------------------------------------------
+    locs1 and locs2     matrices specifying point locations in each of the images
+    matches             matrix specifying matches between these two sets of point locations
+    nIter               number of iterations to run RANSAC
+    tol                 tolerance value for considering a point to be an inlier
 
-        A[2*i] = [0, 0, 0, -u, -v, -1, y*u, y*v, y]
-        A[2*i+1] = [u, v, 1, 0, 0, 0, -x*u, -x*v, -x]
-
-    #print(A)
-    (U, S, V) = np.linalg.svd(A)
-
-    L = V[-1,:] / V[-1,-1]
-
-    H2to1 = L.reshape(3,3)
-
-    # (U, S, V) = np.linalg.svd(A, False)
-    # H2to1 = np.reshape(V[:,8], (3,3))
-
-    return H2to1
-
-def ransacH(matches, locs1, locs2, num_iter=5000, tol=2):
+    Outputs             Description
+    ---------------------------------------------------------
+    bestH           homography matrix with the most inliers found during RANSAC
     '''
-    Returns the best homography by computing the best set of matches using
-    RANSAC
-    INPUTS
-        locs1 and locs2 - matrices specifying point locations in each of the images
-        matches - matrix specifying matches between these two sets of point locations
-        nIter - number of iterations to run RANSAC
-        tol - tolerance value for considering a point to be an inlier
+    matchesNum = matches.shape[0]
+    pt1 = locs1[matches[:,0], 0:2]
+    pt2 = locs2[matches[:,1], 0:2]
 
-    OUTPUTS
-        bestH - homography matrix with the most inliers found during RANSAC
-    '''
-    ###########################
-    # TO DO ...
-    n = matches.shape[0]
-    print("Number of matches: ", n)
-    max_num_inliers = -1
-    bestH = np.zeros((3,3))
+    max_count = 0
+    for _ in range(num_iter):
+        try:
+            # randomly select four point pairs and calculate the homography
+            index = random.sample(range(0, matchesNum), pairsNum)
+            pt1_rand = pt1[index]
+            pt2_rand = pt2[index]
 
-    X = np.zeros((n, 2))
-    U = np.zeros((n, 2))
-    X[:, :] = locs1[matches[:, 0], 0:2]
-    # X[:, [0,1]] = X[:, [1,0]]
-    U[:, :] = locs2[matches[:, 1], 0:2]
-    # U[:, [0,1]] = X[:, [1,0]]
+            # compute the homography and projective points in theory
+            H2to1 = computeH(pt1_rand, pt2_rand, pairsNum)
+            pt2_augment = np.c_[pt2, np.ones(pt2.shape[0])]
+            pt2_project = np.matmul(H2to1, pt2_augment.T)
+            pt2_project /= pt2_project[2, :]
 
-    p1 = np.zeros((2, 4))
-    p2 = np.zeros((2, 4))
-
-    for iter in range(num_iter):
-        indexs = np.random.choice(n, 4, replace=False)
-        for i in range(indexs.shape[0]):
-            x = locs1[matches[indexs[i], 0], 0:2]
-            u = locs2[matches[indexs[i], 1], 0:2]
-            p1[:, i] = x
-            p2[:, i] = u
-
-        H = computeH(p1, p2)
-        # Compute number of inliers
-        X_homo = np.append(np.transpose(X), np.ones((1, n)), axis=0) # 3xn
-        U_homo = np.append(np.transpose(U), np.ones((1, n)), axis=0) # 3xn
-        reprojection = np.matmul(H, U_homo)
-        reprojection_norm = np.divide(reprojection, reprojection[2, :])
-
-        error = X_homo - reprojection_norm
-        #print(error)
-        num_inliers = 0
-        for i in range(n):
-            squared_dist = error[0, i]**2 + error[1, i]**2
-            #print(squared_dist)
-            if squared_dist <= tol**2:
-                num_inliers += 1
-        #print(num_inliers)
-
-        if num_inliers > max_num_inliers:
-            bestH = H
-            max_num_inliers = num_inliers
-    print("RANSAC max number of inliers: ", max_num_inliers)
-
+            # compare residuals with tolerance to get inliners
+            residual = pt2_project.T[:,:2] - pt1 
+            dist = np.sum(residual**2, axis=1) ** 0.5
+            inlier_count = dist[dist <= tol].size
+            if inlier_count > max_count:
+                max_count = inlier_count
+                bestH = H2to1        
+        except:
+            print('Bad selection of 4 points pair, can not calculate homography, skip.')
+    print('Matches: {}; Maximum inliners counts: {}'.format(matchesNum, max_count))
     return bestH
 
 
-
 if __name__ == '__main__':
-    im1 = cv2.imread('../data/model_chickenbroth.jpg')
-    im2 = cv2.imread('../data/chickenbroth_01.jpg')
+    im1 = cv2.imread('../data/incline_L.png')
+    im2 = cv2.imread('../data/incline_R.png')
 
     locs1, desc1 = briefLite(im1)
     locs2, desc2 = briefLite(im2)
 
     matches = briefMatch(desc1, desc2)
-    plotMatches(im1,im2,matches,locs1,locs2)
+    # plotMatches(im1,im2,matches,locs1,locs2)
 
-    # P = np.random.randint(100, size=(2,4))
-    # P_homo = np.append(P, np.ones((1, 4)), axis=0)
-    # H = np.random.randint(10, size=(3,3))
-    # H = H / np.linalg.norm(H, 2)
-    # Q = np.matmul(H, P_homo)
-    # Q_norm = np.divide(Q, Q[2,:])
-    # H_ = computeH(Q_norm[:2, :], P_homo[:2, :])
-    # print(H - H_)
-
-    ransacH(matches, locs1, locs2, num_iter=5000, tol=2)
+    bestH = ransacH(matches, locs1, locs2, num_iter=1000, tol=2)
+    print(bestH)

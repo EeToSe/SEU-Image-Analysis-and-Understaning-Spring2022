@@ -28,19 +28,20 @@ def rotation_matrix(im, deg):
     nW = int((imh * sin) + (imw * cos))
     nH = int((imh * cos) + (imw * sin))
 
-    # adjust the rotation matrix to take into account translation
+    # adjust the rotation matrix to translation take into account 
     M[0, 2] += (nW / 2) - center[0]
     M[1, 2] += (nH / 2) - center[1]    
     rotated_image = cv2.warpAffine(im, M, (nW, nH))
-    return np.mat(M), rotated_image
+    return M, rotated_image
 
-def recognition_rate(im, rotated_image, M):
+def recognition_rate(im, rotated_image, M, tol=3):
     ''' Calculate the recognition rate for BRIEF descriptor
     Inputs          Description
     ---------------------------------------------------------
     im              source image to rotate
     rotated_image   im rotated by deg  
     deg             degrees to rotate
+    tol             tolerance value for considering a point a correct match
 
     Output          Description
     ---------------------------------------------------------
@@ -55,19 +56,19 @@ def recognition_rate(im, rotated_image, M):
 
     # augment pt1 to size = (3, N)
     pt1_augment = np.c_[pt1, np.ones(pt1.shape[0])].T   
-    pt1_rotate = np.array(M*np.mat(pt1_augment)).T
+    pt1_rotate = np.matmul(M, pt1_augment)
 
     # standard for the correct matches
-    error = pt1_rotate - pt2
+    error = pt1_rotate.T - pt2
+    distance = np.sqrt(error[:,0]**2+error[:,1]**2)
     matchesNum = matches.shape[0]
     result = np.ones(matchesNum, dtype=bool)
-    result[np.abs(error[:,0])>4] = False
-    result[np.abs(error[:,1])>4] = False
+    result[distance>tol] = False
     correctNum = np.count_nonzero(result)
     return correctNum/ matchesNum
 
 def rotate_match(im):
-    """Compare the therotical locs coordianates with the results by briefMatch 
+    """ Compare the therotical locs coordianates with the results by briefMatch 
     Input                   Description
     ---------------------------------------------------------
     im                      numpy array representing the image with size=(H, W, 3)
@@ -84,11 +85,11 @@ def rotate_match(im):
     for deg in range(30, 180, 5):
         M, rotated_image = rotation_matrix(im, deg)
         result = recognition_rate(im, rotated_image, M)
-        recognition_results.append((deg, result))        
+        recognition_results.append((deg, result))      
     return np.array(recognition_results)
 
 def construct_graph(recognition_results):
-    """Recurrence of paper Section4 - Orientation Sensitivity of BRIEF
+    """ Recurrence of paper Section4 - Orientation Sensitivity of BRIEF
     """
     x = recognition_results[:,0]
     y = 100*recognition_results[:,1]

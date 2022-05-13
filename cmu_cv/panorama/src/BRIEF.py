@@ -151,7 +151,7 @@ def plotMatches(im1, im2, matches, locs1, locs2):
         plt.plot(x,y,'g.')
     plt.axis('off')
     # plt.savefig(path, bbox_inches='tight',dpi=fig.dpi,pad_inches=0.0) # remove the white border
-    # plt.show()
+    plt.show()
 
 if __name__ == '__main__':
     im1 = cv2.imread('../data/incline_R.png')
