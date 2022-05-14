@@ -70,6 +70,7 @@ def ransacH(matches, locs1, locs2, pairsNum=4, num_iter=500, tol=4):
         except:
             print('Bad selection of 4 points pair, can not calculate homography, skip.')
     print('Matches: {}; Maximum inliners counts: {}'.format(matchesNum, max_count))
+    np.save('../results/bestH.npy', bestH)
     return bestH
 
 
