@@ -17,6 +17,6 @@ cmu_cv/.cmuvenv/*
 cmu_cv/panorama/reference/*.zip
 cmu_cv/notebooks/generated_files/*
 cmu_cv/panorama/results/*
-
+cmu_cv/panorama/16-385assgn2/*
 cs231n/*
 
