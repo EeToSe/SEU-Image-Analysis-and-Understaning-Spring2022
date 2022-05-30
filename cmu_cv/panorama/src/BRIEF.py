@@ -65,6 +65,11 @@ def computeBrief(im, locsDoG, gaussian_pyramid, compareX, compareY):
         if h+EXTENT < imH and h-EXTENT >= 0 and w+EXTENT < imW and w-EXTENT >= 0:
             locs.append(loc)
 
+    # # pre-smoothing with Gaussian 
+    # sigma = np.sqrt(2)
+    # size = int(np.floor(3*sigma*2) + 1)
+    # im_blur = cv2.GaussianBlur(im, (size,size), sigma)
+        
     # compute BRIEF descriptor
     nbits = compareX.size
     desc = []
@@ -154,16 +159,16 @@ def plotMatches(im1, im2, matches, locs1, locs2):
     plt.show()
 
 if __name__ == '__main__':
-    im1 = cv2.imread('../data/incline_R.png')
-    tempalte = 'incline_L.png'
+    im1 = cv2.imread('../data/model_chickenbroth.jpg')
+    tempalte = 'chicken*'
     testlist = glob.glob('../data/'+tempalte)
     for test in testlist:
         testname = os.path.split(test)[-1]
         im2 = cv2.imread('../data/'+testname)
-        path = '../results/'+ testname.split('.')[0]+'.png'
+        path = '../results/'+ testname.split('.')[0]+'.jpg'
         locs1, desc1 = briefLite(im1)
         locs2, desc2 = briefLite(im2)
         matches = briefMatch(desc1, desc2)
-        plotMatches(im1,im2,matches,locs1,locs2,path)
+        plotMatches(im1,im2,matches,locs1,locs2)
     
  

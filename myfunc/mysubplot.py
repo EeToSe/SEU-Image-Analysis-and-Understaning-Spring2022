@@ -9,4 +9,3 @@ def subplots(imgs, titles, row, col):
         plt.xticks([]),plt.yticks([])
     plt.tight_layout()
     plt.show()
-    print('Ha, nice plots!')     

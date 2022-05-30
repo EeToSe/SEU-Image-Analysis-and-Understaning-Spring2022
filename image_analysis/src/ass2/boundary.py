@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from fuzzy_filtering import *
+from myfunc.fuzzy_filtering import *
 
 # Membership function of input
 d_range = range(-100,101)

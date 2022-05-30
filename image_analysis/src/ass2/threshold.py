@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from otsu import *
-from fuzzy_threshold import fuzzy_threshold
+from myfunc.otsu import *
+from myfunc.fuzzy_threshold import fuzzy_threshold
 
 if __name__ == '__main__':
     file_loc = "../../data/ass2/"
