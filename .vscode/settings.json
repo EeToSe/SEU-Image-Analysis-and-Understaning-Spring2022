@@ -1,3 +1,9 @@
 {
     "cSpell.enabled": false
+    
+    "files.exclude": {
+        "**.pyc": true, 
+        "cmu_cv/*.json":true
+        "cmu_cv/__pycache__":true
+      }
 }

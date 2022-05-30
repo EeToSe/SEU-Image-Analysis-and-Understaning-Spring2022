@@ -1,8 +1,8 @@
 import numpy as np
 import cv2
-import BRIEF
-
 import matplotlib.pyplot as plt
+
+from myfunc.features import BRIEF
 
 def rotation_matrix(im, deg):
     ''' Calculate the rotation matrix M
@@ -28,7 +28,7 @@ def rotation_matrix(im, deg):
     nW = int((imh * sin) + (imw * cos))
     nH = int((imh * cos) + (imw * sin))
 
-    # calculate the translated distance
+    # adjust the rotation matrix to take translation into account 
     M[0, 2] += (nW / 2) - center[0]
     M[1, 2] += (nH / 2) - center[1]    
     rotated_image = cv2.warpAffine(im, M, (nW, nH))
