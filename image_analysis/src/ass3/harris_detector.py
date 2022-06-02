@@ -6,7 +6,7 @@ from scipy.ndimage import maximum_filter
 from skimage.feature import corner_harris, corner_peaks
 
 def corner_detection(image, kernel_size = 3, min_distance=5, r_threshold=0.2):
-    h,w = image.shape
+    
     # Image first gradients
     Ix = cv.Sobel(image,cv.CV_64F,1,0,ksize=1)
     abs_Ix = np.absolute(Ix)
