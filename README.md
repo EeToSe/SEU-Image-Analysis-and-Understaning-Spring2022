@@ -1,6 +1,5 @@
-# IAU CV Homework
-## Image analysis and understanding
-### Hw1 Morphology Experiment
+# IAU CV Homework and Final Project
+## Hw1 Morphology Experiment
 **Hw1.1 Binary operation**
 1. Proof: <img src="https://render.githubusercontent.com/render/math?math=\left(I_{0} \cdot B\right)^{c}=I_{0}^{c} \circ \widehat{B}"> 
 2. Reconstruction with marker and source image
@@ -11,11 +10,11 @@
 2. H-dome
 
 ## Hw2 Fuzzy Method
-**Hw2.1 Edge Extraction**
+**Hw2.1 Edge Extraction** <br>
 **Hw2.2 Thresholding**
 
 ## Hw3 Features
-**Hw3.1 Harris Corner Detection**
+**Hw3.1 Harris Corner Detection** <br>
 **Hw3.2 SIFT and homography**
 
 ## Computer Vision
