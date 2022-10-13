@@ -1,4 +1,4 @@
-# IAU CV Homework and Final Project
+# IAU Homework and Final Project
 ## Hw1 Morphology Experiment
 **HW 1.1 Binary operation**
 1. Proof: <img src="https://render.githubusercontent.com/render/math?math=\left(I_{0} \cdot B\right)^{c}=I_{0}^{c} \circ \widehat{B}"> 
